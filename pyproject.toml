@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.25,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "codex-funplay-bridge"
+version = "0.1.0"
+description = "A project-scoped stdio MCP bridge for Funplay MCP for Unity."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Codex-Funplay Bridge contributors" }]
+dependencies = [
+  "httpx>=0.27,<1.0",
+  "mcp>=1.0,<2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4,<9", "pyinstaller>=6.0,<7"]
+
+[project.scripts]
+codex-funplay-bridge = "codex_funplay_bridge.server:main"
+codex-funplay-bridge-setup = "codex_funplay_bridge.setup_wizard:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/codex_funplay_bridge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

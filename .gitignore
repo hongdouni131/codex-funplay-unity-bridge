@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+pyinstaller-build/
+
+# Per-project Bridge state
+.unity-mcp-bridge-venv/
+bridge-project.toml
+*.jsonl
+
+# Unity generated content
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Secrets and local editor files
+.env
+.vscode/
