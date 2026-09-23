@@ -34,5 +34,36 @@ not edit any Codex configuration automatically.
 5. Validate in this order: `unity_bridge_info`, `unity_health_check`,
    `unity_list_tools`, then one known read-only Unity tool.
 
+### Generate the Codex entry after deployment
+
+The Bridge can generate a configuration snippet without editing Codex:
+
+```powershell
+.\.venv\Scripts\codex-funplay-bridge-config.exe `
+  --project-name "ExampleUnityProject" `
+  --project-root "D:\path\to\UnityProject"
+```
+
+It verifies the project markers and
+`tools\start_unity_http_stdio_bridge.cmd`, displays the project name and path,
+and asks for confirmation. Only after the user confirms does it print the TOML
+entry. Copy that entry manually into the desired Codex MCP configuration.
+
+The command intentionally never edits `C:\Users\<user>\.codex\config.toml`,
+Claude Code configuration, or Coplay configuration.
+
 The Bridge is intended to be installed as a package. Do not copy individual
 source files into a Unity project.
+
+### Reproducing the verified dependency set
+
+For a development environment that matches the release test run, install the
+versions recorded in the repository lock file before installing the editable
+package:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```
+
+The lock file currently records `mcp==1.30.0` and `httpx==0.28.1`.
