@@ -21,6 +21,7 @@ dev = ["pytest>=7.4,<9", "pyinstaller>=6.0,<7"]
 [project.scripts]
 codex-funplay-bridge = "codex_funplay_bridge.server:main"
 codex-funplay-bridge-setup = "codex_funplay_bridge.setup_wizard:main"
+codex-funplay-bridge-config = "codex_funplay_bridge.config_snippet:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/codex_funplay_bridge"]

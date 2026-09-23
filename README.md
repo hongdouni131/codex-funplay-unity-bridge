@@ -26,6 +26,11 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pytest
 ```
 
+The release-verified runtime versions are recorded in
+`requirements-lock.txt`. Use that file when reproducing the tested runtime in
+a fresh environment; keep the version ranges in `pyproject.toml` for package
+metadata compatibility.
+
 ## Configure a Unity project
 
 For a shareable Windows launcher, use
@@ -80,3 +85,26 @@ The server writes protocol traffic only to stdout. Audit events go to
 
 See `docs/setup.md`, `docs/architecture.md`, and `docs/troubleshooting.md` for
 the operational details.
+
+## Generate a Codex configuration snippet
+
+After the Bridge has been deployed into a Unity project, run this command from
+the Bridge repository:
+
+```powershell
+.\.venv\Scripts\codex-funplay-bridge-config.exe `
+  --project-name "NavmeshStudy" `
+  --project-root "D:\Unity\unity project\NavmeshStudy"
+```
+
+The command validates the Unity project and the Bridge launcher, shows the
+project name and path, and asks for confirmation. Only after confirmation does
+it print a TOML snippet such as:
+
+```toml
+[mcp_servers.unity_bridge_navmeshstudy]
+command = "D:\\Unity\\unity project\\NavmeshStudy\\tools\\start_unity_http_stdio_bridge.cmd"
+```
+
+Copy the printed snippet manually into the Codex MCP configuration. The tool
+never edits Codex, Claude Code, Coplay, or any other global MCP configuration.
