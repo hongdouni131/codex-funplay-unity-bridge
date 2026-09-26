@@ -8,7 +8,9 @@ import threading
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from tkinter.scrolledtext import ScrolledText
 
+from .config_snippet import ConfigSnippetError, build_config_snippet
 from .provisioning import DeploymentPlan, ProvisioningError, create_plan, deploy, preflight
 
 
@@ -148,9 +150,61 @@ class SetupWizard(ttk.Frame):
         if report.get("ok"):
             self.status.set(f"Bridge 已部署。Funplay 返回 {report['tool_count']} 个工具。可使用 tools\\start_unity_http_stdio_bridge.cmd 启动。")
             messagebox.showinfo("Bridge 已部署", "已创建或更新：\n\n" + "\n".join(str(path) for path in files), parent=self.root)
+            self._offer_codex_config_snippet()
         else:
             self.status.set("文件已部署，但后续健康检查失败。")
             messagebox.showerror("Bridge 健康检查", json.dumps(report, ensure_ascii=False, indent=2), parent=self.root)
+
+    def _offer_codex_config_snippet(self) -> None:
+        if self.plan is None:
+            return
+        wants_snippet = messagebox.askyesno(
+            "生成 Codex 配置片段？",
+            "Bridge 已部署。是否生成可复制到 Codex MCP 配置中的 TOML 内容？\n\n"
+            "该操作只显示配置片段，不会修改 Codex、Claude Code 或其他全局配置。",
+            parent=self.root,
+        )
+        if not wants_snippet:
+            return
+        try:
+            snippet = build_config_snippet(self.plan.project_name, self.plan.project_root)
+        except ConfigSnippetError as exc:
+            messagebox.showerror("生成 Codex 配置片段", str(exc), parent=self.root)
+            return
+        self._show_codex_config_snippet(snippet)
+
+    def _show_codex_config_snippet(self, snippet: str) -> None:
+        dialog = tk.Toplevel(self.root)
+        dialog.title("复制 Codex MCP 配置")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.minsize(700, 310)
+        dialog.columnconfigure(0, weight=1)
+        dialog.rowconfigure(1, weight=1)
+
+        ttk.Label(
+            dialog,
+            text="将以下内容复制到 Codex MCP 配置中。此向导不会自动修改任何全局配置。",
+            wraplength=650,
+        ).grid(row=0, column=0, sticky="w", padx=18, pady=(18, 10))
+
+        text = ScrolledText(dialog, wrap="word", height=10, font=("Consolas", 10))
+        text.insert("1.0", snippet)
+        text.configure(state="disabled")
+        text.grid(row=1, column=0, sticky="nsew", padx=18, pady=(0, 14))
+
+        buttons = ttk.Frame(dialog)
+        buttons.grid(row=2, column=0, sticky="e", padx=18, pady=(0, 18))
+
+        def copy_to_clipboard() -> None:
+            dialog.clipboard_clear()
+            dialog.clipboard_append(snippet)
+            dialog.update()
+            copied.configure(text="已复制")
+
+        copied = ttk.Button(buttons, text="复制到剪贴板", command=copy_to_clipboard)
+        copied.grid(row=0, column=0, padx=(0, 8))
+        ttk.Button(buttons, text="关闭", command=dialog.destroy).grid(row=0, column=1)
 
     def _set_busy(self, message: str) -> None:
         self.status.set(message)

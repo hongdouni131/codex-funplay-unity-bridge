@@ -88,8 +88,10 @@ the operational details.
 
 ## Generate a Codex configuration snippet
 
-After the Bridge has been deployed into a Unity project, run this command from
-the Bridge repository:
+After successful deployment, the setup wizard asks whether to generate a
+copyable Codex MCP configuration snippet. Choosing yes opens a dialog with a
+copy button; it never writes a global Codex configuration file. The following
+terminal command remains available for manual or scripted use:
 
 ```powershell
 .\.venv\Scripts\codex-funplay-bridge-config.exe `
