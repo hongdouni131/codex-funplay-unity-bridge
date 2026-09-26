@@ -36,6 +36,11 @@ not edit any Codex configuration automatically.
 
 ### Generate the Codex entry after deployment
 
+After deployment succeeds, the setup wizard asks whether to generate a Codex
+configuration snippet. Select **Yes** to open a copyable TOML dialog, then
+paste the result into the desired Codex MCP configuration. Select **No** to
+finish without generating anything. Neither choice edits Codex configuration.
+
 The Bridge can generate a configuration snippet without editing Codex:
 
 ```powershell
