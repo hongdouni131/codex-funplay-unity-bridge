@@ -12,10 +12,10 @@
 转发、错误诊断、日志和测试。
 
 项目工作目录：
-D:\Mcp Bridge
+<Bridge 项目目录>
 
 已有参考文档：
-D:\Mcp Bridge\Unity_Agent_Development_Roadmap.md
+<Bridge 项目目录>\Reference file\Unity_Agent_Development_Roadmap.md
 
 请先读取并理解这份路线文档，再检查当前项目目录和开发环境。
 
@@ -148,8 +148,8 @@ timeout_seconds = 10
 - 所有回复使用中文，先说明结论。
 - 每次修改前先读取相关文件，并列出修改文件、修改目的和方法。
 - 第一次检查后不要直接写代码，先给我实现计划并等待确认。
-- 不要擅自修改 C:\Users\24281\.codex\config.toml。
-- 不要修改 C:\Users\24281\.mcp.json、C:\Users\24281\.claude.json 或 .claude 目录。
+- 不要擅自修改 C:\Users\<用户名>\.codex\config.toml。
+- 不要修改 C:\Users\<用户名>\.mcp.json、C:\Users\<用户名>\.claude.json 或 .claude 目录。
 - 不要连接或修改 Claude Code 使用的 MCP for Unity 端口，例如 8088。
 - 不要把 Funplay 端口写死为旧项目端口；必须使用当前 Unity 窗口显示的 URL。
 - 不要提交环境变量、API Key、Token、真实用户路径或运行日志。
@@ -177,8 +177,8 @@ GitHub 发布目标：
 - 可以准备本地 Git 提交和推送命令，但执行推送前先让我确认。
 
 现在请执行第一步：
-1. 读取 D:\Mcp Bridge\Unity_Agent_Development_Roadmap.md。
-2. 检查 D:\Mcp Bridge 当前目录状态。
+1. 读取 <Bridge 项目目录>\Reference file\Unity_Agent_Development_Roadmap.md。
+2. 检查 <Bridge 项目目录> 当前目录状态。
 3. 检查 Python 3.11、Git 和基础依赖是否可用。
 4. 检查当前是否已经是 Git 仓库。
 5. 输出检查结果和第一阶段实现计划。

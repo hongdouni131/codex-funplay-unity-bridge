@@ -4,9 +4,19 @@ This project provides a project-scoped Python MCP server that lets Codex
 Desktop communicate with a local Funplay MCP for Unity HTTP server. It does
 not replace or modify Funplay.
 
-```
+```text
 Codex Desktop -> stdio MCP -> Python Bridge -> HTTP JSON-RPC -> Funplay -> Unity Editor
 ```
+
+## Features
+
+- Deploy a project-local Bridge from a Windows setup wizard.
+- Validate a local Funplay URL, port, MCP initialization, and `tools/list`.
+- Expose a small stdio MCP surface for Codex: health check, tool discovery,
+  tool forwarding, and Bridge information.
+- Generate a copyable Codex configuration snippet after deployment without
+  editing global MCP configuration files.
+- Record redacted JSONL audit events beside the project configuration.
 
 ## Scope
 
@@ -16,6 +26,14 @@ configuration validation, connectivity diagnostics, MCP initialization,
 
 It deliberately does not modify Codex, Claude Code, Coplay, Funplay, Unity
 assets, or global MCP configuration files.
+
+## Requirements
+
+- Windows
+- Python 3.11 available through the Windows `py` launcher
+- Unity 2022.3 or later
+- [Funplay MCP for Unity](https://github.com/FunplayAI/funplay-unity-mcp)
+- Codex Desktop
 
 ## Install for development
 
@@ -86,7 +104,7 @@ The server writes protocol traffic only to stdout. Audit events go to
 See `docs/setup.md`, `docs/architecture.md`, and `docs/troubleshooting.md` for
 the operational details.
 
-## Generate a Codex configuration snippet
+## Add the Codex MCP entry
 
 After successful deployment, the setup wizard asks whether to generate a
 copyable Codex MCP configuration snippet. Choosing yes opens a dialog with a
@@ -95,8 +113,8 @@ terminal command remains available for manual or scripted use:
 
 ```powershell
 .\.venv\Scripts\codex-funplay-bridge-config.exe `
-  --project-name "NavmeshStudy" `
-  --project-root "D:\Unity\unity project\NavmeshStudy"
+  --project-name "ExampleUnityProject" `
+  --project-root "D:\path\to\ExampleUnityProject"
 ```
 
 The command validates the Unity project and the Bridge launcher, shows the
@@ -104,9 +122,38 @@ project name and path, and asks for confirmation. Only after confirmation does
 it print a TOML snippet such as:
 
 ```toml
-[mcp_servers.unity_bridge_navmeshstudy]
-command = "D:\\Unity\\unity project\\NavmeshStudy\\tools\\start_unity_http_stdio_bridge.cmd"
+[mcp_servers.unity_bridge_exampleunityproject]
+command = "D:\\path\\to\\ExampleUnityProject\\tools\\start_unity_http_stdio_bridge.cmd"
 ```
 
 Copy the printed snippet manually into the Codex MCP configuration. The tool
 never edits Codex, Claude Code, Coplay, or any other global MCP configuration.
+
+## Verification
+
+Run the automated test suite from the repository root:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+The `0.1.0` release has 28 automated tests covering configuration validation,
+HTTP and JSON-RPC failures, health checks, deployment safeguards, audit-log
+redaction, and Codex configuration snippet generation.
+
+For a real Unity project, verify in this order:
+
+1. `unity_bridge_info`
+2. `unity_health_check`
+3. `unity_list_tools`
+4. One known read-only Funplay tool
+
+## Limitations
+
+- Version `0.1.0` supports one local Windows Unity project per Bridge process.
+- The setup application does not modify any global Codex, Claude Code, or
+  Coplay configuration file.
+- The setup executable is not code-signed. Windows SmartScreen may display a
+  warning for a downloaded release binary.
+
+See `docs/release-v0.1.0.md` for the release notes and checksum.
