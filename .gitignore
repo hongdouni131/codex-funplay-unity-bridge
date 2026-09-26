@@ -13,6 +13,9 @@ pyinstaller-build/
 release/Codex-Funplay-Bridge-Setup.exe
 release/Codex-Funplay-Bridge-Setup.exe.sha256
 
+# Personal planning notes stay local and are not part of the public template.
+Reference file/
+
 # Per-project Bridge state
 .unity-mcp-bridge-venv/
 bridge-project.toml
