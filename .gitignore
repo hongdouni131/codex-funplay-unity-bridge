@@ -9,6 +9,10 @@ dist/
 dist-check/
 pyinstaller-build/
 
+# Release binaries are published as GitHub Release assets, not source files.
+release/Codex-Funplay-Bridge-Setup.exe
+release/Codex-Funplay-Bridge-Setup.exe.sha256
+
 # Per-project Bridge state
 .unity-mcp-bridge-venv/
 bridge-project.toml
