@@ -1,26 +1,22 @@
-# Setup
+# 部署与配置
 
-1. Run `release/Codex-Funplay-Bridge-Setup.exe`. For source development, use
-   `start_bridge_setup_wizard.cmd` at the Bridge repository root instead.
-2. Select the Unity project root and paste the exact URL displayed by
-   `Funplay > MCP Server`.
-3. Select `Validate configuration`. It checks that the directory is a Unity
-   project and that Funplay accepts MCP initialization and `tools/list`.
-   No files are written if validation fails.
-4. Select `Deploy Bridge`. The wizard requires confirmation before replacing
-   an existing Bridge-managed file, creates the project-local virtual
-   environment, installs the package, and runs a follow-up health check.
+## 使用 Release 安装程序
 
-### Manual setup
+1. 从 GitHub Release 下载 `Codex-Funplay-Bridge-Setup.exe` 和对应 `.sha256` 文件。
+2. 校验 SHA256 后运行安装程序。源码开发时，运行仓库根目录的 `start_bridge_setup_wizard.cmd`。
+3. 选择 Unity 项目根目录，粘贴 `Funplay > MCP Server` 显示的准确 URL。
+4. 点击“验证配置”。它会验证 Unity 项目标识、端口、MCP 初始化与 `tools/list`；失败时不会写入文件。
+5. 点击“部署 Bridge”。替换已有 Bridge 管理文件前会请求确认，并创建项目本地虚拟环境。
+6. 选择生成 Codex 配置片段，手动粘贴到 Codex 配置，再重新加载 MCP 服务。
 
-1. In the Unity project, open `Funplay > MCP Server` and start its service.
-2. Copy the exact URL displayed there into `tools/bridge-project.toml`.
-3. Copy the `tools` directory from `templates/unity-project` into the Unity
-   project. Set `BRIDGE_PACKAGE_PATH` to this repository's local directory,
-   then run `tools/initialize_unity_http_stdio_bridge.cmd`. It creates the
-   isolated `.unity-mcp-bridge-venv` and installs the Bridge package.
+## 手动部署
 
-   The equivalent manual commands are:
+1. 在 Unity 打开 `Funplay > MCP Server` 并启动服务。
+2. 将显示的 URL 写入 `tools/bridge-project.toml`。
+3. 将 `templates/unity-project/tools` 复制到 Unity 项目的 `tools` 目录，设置 `BRIDGE_PACKAGE_PATH` 为 Bridge 仓库路径，运行 `tools/initialize_unity_http_stdio_bridge.cmd`。
+4. 在 Codex MCP 配置中，将 `tools/start_unity_http_stdio_bridge.cmd` 作为 command。
+
+等效的虚拟环境命令：
 
 ```powershell
 py -3.11 -m venv .unity-mcp-bridge-venv
@@ -28,47 +24,13 @@ py -3.11 -m venv .unity-mcp-bridge-venv
 .\.unity-mcp-bridge-venv\Scripts\python.exe -m pip install "D:\path\to\codex-funplay-bridge-template"
 ```
 
-4. Use `tools/start_unity_http_stdio_bridge.cmd` as the stdio command when
-configuring the project-specific Codex MCP connection. This repository does
-not edit any Codex configuration automatically.
-5. Validate in this order: `unity_bridge_info`, `unity_health_check`,
-   `unity_list_tools`, then one known read-only Unity tool.
+Bridge 不会自动编辑 `C:\Users\<user>\.codex\config.toml`、Claude Code 配置或 Coplay 配置。
 
-### Generate the Codex entry after deployment
-
-After deployment succeeds, the setup wizard asks whether to generate a Codex
-configuration snippet. Select **Yes** to open a copyable TOML dialog, then
-paste the result into the desired Codex MCP configuration. Select **No** to
-finish without generating anything. Neither choice edits Codex configuration.
-
-The Bridge can generate a configuration snippet without editing Codex:
-
-```powershell
-.\.venv\Scripts\codex-funplay-bridge-config.exe `
-  --project-name "ExampleUnityProject" `
-  --project-root "D:\path\to\UnityProject"
-```
-
-It verifies the project markers and
-`tools\start_unity_http_stdio_bridge.cmd`, displays the project name and path,
-and asks for confirmation. Only after the user confirms does it print the TOML
-entry. Copy that entry manually into the desired Codex MCP configuration.
-
-The command intentionally never edits `C:\Users\<user>\.codex\config.toml`,
-Claude Code configuration, or Coplay configuration.
-
-The Bridge is intended to be installed as a package. Do not copy individual
-source files into a Unity project.
-
-### Reproducing the verified dependency set
-
-For a development environment that matches the release test run, install the
-versions recorded in the repository lock file before installing the editable
-package:
+## 复现发布依赖
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-The lock file currently records `mcp==1.30.0` and `httpx==0.28.1`.
+当前锁定版本为 `mcp==1.30.0` 与 `httpx==0.28.1`。

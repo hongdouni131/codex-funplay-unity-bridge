@@ -1,56 +1,37 @@
-# Codex-Funplay Unity Bridge Template v0.1.0
+# Codex-Funplay Unity Bridge 模板 v0.1.0
 
-## Summary
+## 概述
 
-This is the first usable release of a project-scoped stdio-to-HTTP Bridge for
-connecting Codex Desktop to a local Funplay MCP for Unity server.
+第一个可用版本：一个按项目隔离的 stdio-to-HTTP Bridge，用于连接 Codex Desktop 与本机 Funplay MCP for Unity 服务。
 
-## Included
+## 包含内容
 
-- Windows setup wizard for validation and project-local deployment.
-- Local URL, port, MCP initialization, protocol, and tool-discovery checks.
-- `unity_bridge_info`, `unity_health_check`, `unity_list_tools`, and
-  `unity_call_tool` stdio MCP tools.
-- A post-deployment dialog that generates a copyable Codex MCP configuration
-  snippet without editing global configuration files.
-- Project-local Python virtual environment provisioning.
-- Redacted JSONL audit logging.
-- Locked, release-verified runtime dependencies:
-  `mcp==1.30.0` and `httpx==0.28.1`.
-- 28 automated tests.
+- Windows 校验与部署向导。
+- 本地 URL、端口、MCP 初始化、协议与工具发现检查。
+- `unity_bridge_info`、`unity_health_check`、`unity_list_tools`、`unity_call_tool`。
+- 部署后生成可复制的 Codex 配置片段，不改写全局配置。
+- 项目本地 Python 虚拟环境和已脱敏 JSONL 审计日志。
+- 锁定并经测试验证的 `mcp==1.30.0`、`httpx==0.28.1`。
+- 28 个自动化测试。
 
-## Requirements
+## 安装
 
-- Windows
-- Python 3.11 available through `py -3.11`
-- Unity 2022.3 or later with Funplay MCP for Unity installed and running
-- Codex Desktop
+1. 在 Unity 启动 `Funplay > MCP Server`，复制准确本地 URL。
+2. 从此 Release 下载并运行 `Codex-Funplay-Bridge-Setup.exe`。
+3. 选择项目根目录，粘贴 URL，验证并部署。
+4. 生成可复制的 Codex MCP 条目，手动粘贴到目标配置并重新加载服务。
+5. 在写操作前运行 `unity_health_check` 和 `unity_list_tools`。
 
-## Install
+## 校验
 
-1. In Unity, start `Funplay > MCP Server` and copy the exact local URL shown.
-2. Run `Codex-Funplay-Bridge-Setup.exe`.
-3. Select the Unity project root, paste the Funplay URL, validate, and deploy.
-4. When prompted, choose whether to generate a copyable Codex MCP entry.
-5. Paste the displayed entry into the intended Codex configuration and reload
-   Codex MCP services.
-6. Run `unity_health_check` and `unity_list_tools` before any write operation.
-
-## Verification
-
-The release binary SHA256 is recorded in
-`release/Codex-Funplay-Bridge-Setup.exe.sha256`.
-
-On Windows, verify a downloaded copy with:
+本 Release 的 SHA256 由附件 `Codex-Funplay-Bridge-Setup.exe.sha256` 提供：
 
 ```powershell
 Get-FileHash .\Codex-Funplay-Bridge-Setup.exe -Algorithm SHA256
 ```
 
-## Limitations
+## 限制
 
-- Supports one local Unity project per Bridge process.
-- Does not modify Funplay, Unity assets, Codex global configuration, Claude
-  Code configuration, or Coplay configuration.
-- The executable is not code-signed. Windows SmartScreen may warn on first
-  download; verify the checksum and review the source before proceeding.
+- 每个 Bridge 进程支持一个本机 Unity 项目。
+- 不修改 Funplay、Unity 资源、Codex/Claude Code/Coplay 全局配置。
+- 安装程序未代码签名；下载后请校验 SHA256。

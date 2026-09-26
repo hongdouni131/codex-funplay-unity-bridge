@@ -1,115 +1,70 @@
-# Codex-Funplay Unity Bridge Template
+# Codex-Funplay Unity Bridge 模板
 
-This project provides a project-scoped Python MCP server that lets Codex
-Desktop communicate with a local Funplay MCP for Unity HTTP server. It does
-not replace or modify Funplay.
+本项目提供按 Unity 项目隔离的 Python MCP 服务，使 Codex Desktop 能通过 Funplay MCP for Unity 的 HTTP 服务调用 Unity 工具。它不会替换或修改 Funplay。
 
 ```text
 Codex Desktop -> stdio MCP -> Python Bridge -> HTTP JSON-RPC -> Funplay -> Unity Editor
 ```
 
-## Features
+## 功能
 
-- Deploy a project-local Bridge from a Windows setup wizard.
-- Validate a local Funplay URL, port, MCP initialization, and `tools/list`.
-- Expose a small stdio MCP surface for Codex: health check, tool discovery,
-  tool forwarding, and Bridge information.
-- Generate a copyable Codex configuration snippet after deployment without
-  editing global MCP configuration files.
-- Record redacted JSONL audit events beside the project configuration.
+- Windows 安装向导：为指定 Unity 项目部署 Bridge。
+- 校验 Funplay URL、端口、MCP 初始化和 `tools/list`。
+- 向 Codex 提供 `unity_bridge_info`、`unity_health_check`、`unity_list_tools`、`unity_call_tool`。
+- 部署后生成可复制的 Codex TOML 配置片段，不自动修改全局配置。
+- 在项目配置旁记录已脱敏的 JSONL 审计日志。
 
-## Scope
-
-Version 0.1 supports one local Windows Unity project at a time. It provides
-configuration validation, connectivity diagnostics, MCP initialization,
-`tools/list`, `tools/call`, and redacted JSONL audit logging.
-
-It deliberately does not modify Codex, Claude Code, Coplay, Funplay, Unity
-assets, or global MCP configuration files.
-
-## Requirements
+## 环境要求
 
 - Windows
-- Python 3.11 available through the Windows `py` launcher
-- Unity 2022.3 or later
+- 可通过 Windows `py` 启动器使用 Python 3.11
+- Unity 2022.3 或更新版本
 - [Funplay MCP for Unity](https://github.com/FunplayAI/funplay-unity-mcp)
 - Codex Desktop
 
-## Install for development
+## 用户安装与运行
+
+普通用户不必下载本仓库全部源码。请在 GitHub 的 **Releases** 页面下载两个附件：
+
+- `Codex-Funplay-Bridge-Setup.exe`：安装向导。
+- `Codex-Funplay-Bridge-Setup.exe.sha256`：安装程序的完整性校验值。
+
+下载后先在同一文件夹校验安装程序：
+
+```powershell
+Get-FileHash .\Codex-Funplay-Bridge-Setup.exe -Algorithm SHA256
+Get-Content .\Codex-Funplay-Bridge-Setup.exe.sha256
+```
+
+两者显示的 SHA256 应一致。之后双击运行 `.exe`，选择 Unity 项目根目录，填写 Unity 中 `Funplay > MCP Server` 显示的准确 URL，执行“验证配置”和“部署 Bridge”。部署成功后，选择生成 Codex 配置片段，将显示的 TOML 手动复制到 Codex MCP 配置，重新加载 MCP 服务，并依次调用 `unity_health_check`、`unity_list_tools` 验证。
+
+安装程序内含 Bridge wheel 与部署模板，因此用户无需先下载源码；但目标电脑必须有 Python 3.11，供每个 Unity 项目创建独立的 `.unity-mcp-bridge-venv`。
+
+## 开发环境安装
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The release-verified runtime versions are recorded in
-`requirements-lock.txt`. Use that file when reproducing the tested runtime in
-a fresh environment; keep the version ranges in `pyproject.toml` for package
-metadata compatibility.
+发布验证过的依赖版本记录在 `requirements-lock.txt`。需要复现测试环境时，先执行：
 
-## Configure a Unity project
-
-For a shareable Windows launcher, use
-`release/Codex-Funplay-Bridge-Setup.exe`. It is a single executable with the
-Bridge wheel and deployment templates embedded, so recipients do not need a
-copy of this repository. The recipient still needs Python 3.11 installed via
-the Windows `py` launcher because each Unity project receives its own Python
-virtual environment. Windows may show SmartScreen warnings until a public
-release is code-signed.
-
-Run `start_bridge_setup_wizard.cmd` from this repository to open the local
-setup window. Select the Unity project root and paste the exact URL shown by
-`Funplay > MCP Server`. The window checks the Unity directory markers, local
-URL format, port, MCP initialization, and tool discovery before it enables
-deployment. It asks before replacing any Bridge-managed files, then creates
-the Unity project's isolated environment and configures the Bridge.
-
-The wizard does not change Unity assets, Funplay, Codex global configuration,
-or any other MCP configuration.
-
-### Manual setup
-
-Copy the files under `templates/unity-project/tools` to the Unity project's
-`tools` folder. Set `BRIDGE_PACKAGE_PATH` to this repository's local path and
-run `initialize_unity_http_stdio_bridge.cmd`; it creates the project's
-`.unity-mcp-bridge-venv` and installs the verified runtime dependencies.
-Then set the exact URL displayed by `Funplay > MCP Server` in
-`bridge-project.toml`; do not reuse a port from a previous project.
-
-```toml
-project_name = "ExampleUnityProject"
-funplay_url = "http://127.0.0.1:22166/"
-timeout_seconds = 10
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-Install this package into that project's `.unity-mcp-bridge-venv`, then launch
-the provided `start_unity_http_stdio_bridge.cmd`. The command requires
-`UNITY_BRIDGE_CONFIG` to point to the project configuration, or uses a
-`bridge-project.toml` in its current working directory.
+## 从源码部署
 
-## Exposed MCP tools
+在仓库根目录运行 `start_bridge_setup_wizard.cmd`。选择 Unity 项目根目录，并粘贴 `Funplay > MCP Server` 中显示的准确 URL。向导先检查 Unity 项目标识、URL、端口、MCP 初始化和工具发现；校验通过后才能部署。替换已有 Bridge 管理的文件前会询问确认。
 
-- `unity_bridge_info`: reports the loaded project configuration and version.
-- `unity_health_check`: probes the configured port, HTTP MCP initialization,
-  protocol version, and available tool count.
-- `unity_list_tools`: forwards `tools/list` to Funplay.
-- `unity_call_tool`: forwards `tools/call` with validated arguments.
+向导不会修改 Unity 资源、Funplay、Codex 全局配置、Claude Code、Coplay 或其他 MCP 配置。
 
-The server writes protocol traffic only to stdout. Audit events go to
-`bridge-audit.jsonl` beside the active configuration (or to
-`UNITY_BRIDGE_AUDIT_LOG`) and redact common credential field names.
+## Codex MCP 条目
 
-See `docs/setup.md`, `docs/architecture.md`, and `docs/troubleshooting.md` for
-the operational details.
-
-## Add the Codex MCP entry
-
-After successful deployment, the setup wizard asks whether to generate a
-copyable Codex MCP configuration snippet. Choosing yes opens a dialog with a
-copy button; it never writes a global Codex configuration file. The following
-terminal command remains available for manual or scripted use:
+部署成功后，向导可显示可复制的配置内容。也可以手动生成：
 
 ```powershell
 .\.venv\Scripts\codex-funplay-bridge-config.exe `
@@ -117,43 +72,26 @@ terminal command remains available for manual or scripted use:
   --project-root "D:\path\to\ExampleUnityProject"
 ```
 
-The command validates the Unity project and the Bridge launcher, shows the
-project name and path, and asks for confirmation. Only after confirmation does
-it print a TOML snippet such as:
+确认项目名和路径后，它会输出类似：
 
 ```toml
 [mcp_servers.unity_bridge_exampleunityproject]
 command = "D:\\path\\to\\ExampleUnityProject\\tools\\start_unity_http_stdio_bridge.cmd"
 ```
 
-Copy the printed snippet manually into the Codex MCP configuration. The tool
-never edits Codex, Claude Code, Coplay, or any other global MCP configuration.
+请手动复制该片段至 Codex MCP 配置。工具不会自动编辑任何全局配置文件。
 
-## Verification
-
-Run the automated test suite from the repository root:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-The `0.1.0` release has 28 automated tests covering configuration validation,
-HTTP and JSON-RPC failures, health checks, deployment safeguards, audit-log
-redaction, and Codex configuration snippet generation.
-
-For a real Unity project, verify in this order:
+## 验证顺序
 
 1. `unity_bridge_info`
 2. `unity_health_check`
 3. `unity_list_tools`
-4. One known read-only Funplay tool
+4. 一个已知的只读 Funplay 工具
 
-## Limitations
+`0.1.0` 有 28 个自动化测试，覆盖配置校验、HTTP/JSON-RPC 故障、健康检查、部署保护、审计日志脱敏和 Codex 配置片段生成。
 
-- Version `0.1.0` supports one local Windows Unity project per Bridge process.
-- The setup application does not modify any global Codex, Claude Code, or
-  Coplay configuration file.
-- The setup executable is not code-signed. Windows SmartScreen may display a
-  warning for a downloaded release binary.
+## 限制
 
-See `docs/release-v0.1.0.md` for the release notes and checksum.
+- 每个 Bridge 进程只支持一个本机 Windows Unity 项目。
+- 安装程序未代码签名，Windows SmartScreen 可能提示警告；请校验 SHA256 并审阅源码。
+- 详细操作、架构和问题处理分别见 `docs/setup.md`、`docs/architecture.md`、`docs/troubleshooting.md`。
