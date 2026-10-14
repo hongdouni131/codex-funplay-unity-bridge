@@ -42,7 +42,15 @@ class FakeMcpServer:
                     protocol = "1999-01-01" if outer.mode == "old_protocol" else "2025-03-26"
                     payload = {"jsonrpc": "2.0", "id": request["id"], "result": {"protocolVersion": protocol, "serverInfo": {"name": "fake", "version": "1"}, "capabilities": {}}}
                 elif request["method"] == "tools/list":
-                    payload = {"jsonrpc": "2.0", "id": request["id"], "result": {"tools": [{"name": "read_scene", "description": "safe", "inputSchema": {"type": "object"}}]}}
+                    tools = [{"name": "read_scene", "description": "safe", "inputSchema": {"type": "object"}}]
+                    if outer.mode in {"with_execute_code", "unsafe_execute_schema"}:
+                        execute_schema = {"type": "object", "properties": {"code": {"type": "string"}, "safety_checks": {"type": "boolean"}}, "required": ["code"]}
+                        if outer.mode == "unsafe_execute_schema":
+                            execute_schema["properties"].pop("safety_checks")
+                        tools.append({"name": "execute_code", "description": "run C#", "inputSchema": execute_schema})
+                    payload = {"jsonrpc": "2.0", "id": request["id"], "result": {"tools": tools}}
+                elif request["params"].get("name") == "execute_code":
+                    payload = {"jsonrpc": "2.0", "id": request["id"], "result": {"content": [{"type": "text", "text": json.dumps({"success": True, "data": {"returnValue": {"status": "ready"}}})}]}}
                 else:
                     payload = {"jsonrpc": "2.0", "id": request["id"], "result": {"content": [{"type": "text", "text": "done"}]}}
                 self.send_response(200)

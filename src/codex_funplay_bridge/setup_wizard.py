@@ -10,6 +10,8 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 
+from . import __version__
+from .bridge_naming import bridge_server_name
 from .config_snippet import ConfigSnippetError, build_config_snippet
 from .provisioning import DeploymentPlan, ProvisioningError, create_plan, deploy, preflight
 
@@ -23,15 +25,18 @@ class SetupWizard(ttk.Frame):
         self.project_path = tk.StringVar()
         self.funplay_url = tk.StringVar(value="http://127.0.0.1:22166/")
         self.timeout = tk.StringVar(value="10")
+        self.execute_code_timeout = tk.StringVar(value="60")
+        self.bridge_name = tk.StringVar()
+        self.name_preview = tk.StringVar(value="留空使用项目目录名；不同项目请使用不同名称。")
         self.status = tk.StringVar(value="请选择 Unity 项目，并粘贴 Funplay MCP Server 显示的 URL。")
         self._build()
-        for variable in (self.project_path, self.funplay_url, self.timeout):
+        for variable in (self.project_path, self.funplay_url, self.timeout, self.bridge_name, self.execute_code_timeout):
             variable.trace_add("write", self._invalidate_plan)
         self.after(100, self._drain_events)
 
     def _build(self) -> None:
-        self.root.title("Codex-Funplay Bridge 配置向导")
-        self.root.minsize(680, 390)
+        self.root.title(f"Codex-Funplay Bridge {__version__} 配置向导")
+        self.root.minsize(680, 520)
         self.grid(sticky="nsew")
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -50,17 +55,26 @@ class SetupWizard(ttk.Frame):
         self.url_entry = ttk.Entry(self, textvariable=self.funplay_url)
         self.url_entry.grid(row=3, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=5)
 
-        ttk.Label(self, text="超时秒数").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Label(self, text="默认超时秒数").grid(row=4, column=0, sticky="w", pady=5)
         self.timeout_entry = ttk.Entry(self, textvariable=self.timeout, width=12)
         self.timeout_entry.grid(row=4, column=1, sticky="w", padx=8, pady=5)
 
-        self.validate_button = ttk.Button(self, text="验证配置", command=self._validate)
-        self.validate_button.grid(row=5, column=1, sticky="w", padx=8, pady=(18, 10))
-        self.deploy_button = ttk.Button(self, text="部署 Bridge", command=self._deploy, state="disabled")
-        self.deploy_button.grid(row=5, column=2, sticky="e", pady=(18, 10))
+        ttk.Label(self, text="execute_code 超时秒数").grid(row=5, column=0, sticky="w", pady=5)
+        self.execute_code_timeout_entry = ttk.Entry(self, textvariable=self.execute_code_timeout, width=12)
+        self.execute_code_timeout_entry.grid(row=5, column=1, sticky="w", padx=8, pady=5)
 
-        ttk.Separator(self).grid(row=6, column=0, columnspan=3, sticky="ew", pady=8)
-        ttk.Label(self, textvariable=self.status, wraplength=620, justify="left").grid(row=7, column=0, columnspan=3, sticky="nw", pady=(8, 0))
+        ttk.Label(self, text="Bridge 名称（可选）").grid(row=6, column=0, sticky="w", pady=5)
+        self.name_entry = ttk.Entry(self, textvariable=self.bridge_name)
+        self.name_entry.grid(row=6, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=5)
+        ttk.Label(self, textvariable=self.name_preview, wraplength=500).grid(row=7, column=1, columnspan=2, sticky="w", padx=8, pady=5)
+
+        self.validate_button = ttk.Button(self, text="验证配置", command=self._validate)
+        self.validate_button.grid(row=8, column=1, sticky="w", padx=8, pady=(18, 10))
+        self.deploy_button = ttk.Button(self, text="部署 Bridge", command=self._deploy, state="disabled")
+        self.deploy_button.grid(row=8, column=2, sticky="e", pady=(18, 10))
+
+        ttk.Separator(self).grid(row=9, column=0, columnspan=3, sticky="ew", pady=8)
+        ttk.Label(self, textvariable=self.status, wraplength=620, justify="left").grid(row=10, column=0, columnspan=3, sticky="nw", pady=(8, 0))
 
     def _browse(self) -> None:
         selected = filedialog.askdirectory(title="选择 Unity 项目根目录")
@@ -70,13 +84,28 @@ class SetupWizard(ttk.Frame):
     def _invalidate_plan(self, *_: object) -> None:
         self.plan = None
         self.deploy_button.configure(state="disabled")
+        name = self.bridge_name.get().strip() or Path(self.project_path.get()).name
+        try:
+            self.name_preview.set("Codex MCP 标识：" + bridge_server_name(name))
+        except ValueError:
+            self.name_preview.set("名称需为单行，最多 80 字；留空使用项目目录名。")
 
     def _create_plan(self) -> DeploymentPlan:
         try:
             timeout = float(self.timeout.get())
         except ValueError as exc:
             raise ProvisioningError("Timeout must be a positive number") from exc
-        return create_plan(self.project_path.get(), self.funplay_url.get(), timeout)
+        try:
+            execute_code_timeout = float(self.execute_code_timeout.get())
+        except ValueError as exc:
+            raise ProvisioningError("execute_code timeout must be between 1 and 300 seconds") from exc
+        return create_plan(
+            self.project_path.get(),
+            self.funplay_url.get(),
+            timeout,
+            bridge_name=self.bridge_name.get().strip() or None,
+            execute_code_timeout_seconds=execute_code_timeout,
+        )
 
     def _validate(self) -> None:
         try:
@@ -167,7 +196,7 @@ class SetupWizard(ttk.Frame):
         if not wants_snippet:
             return
         try:
-            snippet = build_config_snippet(self.plan.project_name, self.plan.project_root)
+            snippet = build_config_snippet(self.plan.project_name, self.plan.project_root, bridge_name=self.plan.bridge_name)
         except ConfigSnippetError as exc:
             messagebox.showerror("生成 Codex 配置片段", str(exc), parent=self.root)
             return
@@ -208,13 +237,13 @@ class SetupWizard(ttk.Frame):
 
     def _set_busy(self, message: str) -> None:
         self.status.set(message)
-        for widget in (self.project_entry, self.browse_button, self.url_entry, self.timeout_entry):
+        for widget in (self.project_entry, self.browse_button, self.url_entry, self.timeout_entry, self.execute_code_timeout_entry, self.name_entry):
             widget.configure(state="disabled")
         self.validate_button.configure(state="disabled")
         self.deploy_button.configure(state="disabled")
 
     def _set_ready(self) -> None:
-        for widget in (self.project_entry, self.browse_button, self.url_entry, self.timeout_entry):
+        for widget in (self.project_entry, self.browse_button, self.url_entry, self.timeout_entry, self.execute_code_timeout_entry, self.name_entry):
             widget.configure(state="normal")
         self.validate_button.configure(state="normal")
 

@@ -11,12 +11,16 @@ from .audit_logging import AuditLogger
 from .broker import BridgeError, FunplayBroker
 from .config import BridgeConfig, ConfigError
 from .health import run_health_check
+from .ui_agent_tools import UiAgentTools, register_ui_agent_tools
 
 server = FastMCP("Codex-Funplay Unity Bridge")
 
 
 def _load() -> BridgeConfig:
     return BridgeConfig.load()
+
+
+_ui_agent_tools = UiAgentTools(_load)
 
 
 def _error(exc: Exception) -> dict[str, Any]:
@@ -35,6 +39,8 @@ def unity_bridge_info() -> dict[str, Any]:
             "ok": True,
             "bridge_version": __version__,
             "project_name": config.project_name,
+            "bridge_name": config.bridge_name or config.project_name,
+            "unity_project_root": str(config.unity_project_root) if config.unity_project_root else None,
             "funplay_url": config.funplay_url,
             "config_source": str(config.source),
         }
@@ -77,11 +83,24 @@ def unity_call_tool(name: str, arguments: dict[str, Any] | None = None) -> dict[
         config = _load()
         with FunplayBroker(config) as broker:
             broker.initialize()
-            result = broker.call_tool(name, arguments or {})
+            timeout = config.execute_code_timeout_seconds if name.strip() == "execute_code" else None
+            try:
+                result = broker.call_tool(name, arguments or {}, timeout_seconds=timeout)
+            except BridgeError as exc:
+                if name.strip() == "execute_code" and exc.kind == "timeout":
+                    raise BridgeError(
+                        "execution_status_unknown",
+                        "Timed out waiting for execute_code. Unity may still have completed or be running it; inspect execute_code history before retrying.",
+                        {"timeout_seconds": config.execute_code_timeout_seconds},
+                    ) from exc
+                raise
         AuditLogger(config.source.parent).write("call_tool", project_name=config.project_name, tool_name=name, arguments=arguments or {}, result=result)
         return {"ok": True, "tool_name": name, "result": result}
     except Exception as exc:
         return _error(exc)
+
+
+register_ui_agent_tools(server, _ui_agent_tools)
 
 
 def main() -> None:
