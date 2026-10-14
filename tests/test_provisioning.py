@@ -49,7 +49,7 @@ def test_deploy_refuses_to_overwrite_managed_files(tmp_path: Path, fake_server: 
 
 def test_deploy_installs_before_writing_managed_files(tmp_path: Path, fake_server: FakeMcpServer, monkeypatch: pytest.MonkeyPatch) -> None:
     root = unity_project(tmp_path)
-    plan = create_plan(root, fake_server.url)
+    plan = create_plan(root, fake_server.url, bridge_name='界面 "测试" 桥', execute_code_timeout_seconds=75)
     install_observations: list[bool] = []
 
     def pretend_install(installed_plan: object, _: Path) -> None:
@@ -61,3 +61,7 @@ def test_deploy_installs_before_writing_managed_files(tmp_path: Path, fake_serve
     assert install_observations == [True]
     assert plan.config_path in files
     assert BridgeConfig.load(plan.config_path).funplay_url == fake_server.url
+    assert BridgeConfig.load(plan.config_path).unity_project_root == root.resolve()
+    assert BridgeConfig.load(plan.config_path).bridge_name == '界面 "测试" 桥'
+    assert BridgeConfig.load(plan.config_path).project_name == root.name
+    assert BridgeConfig.load(plan.config_path).execute_code_timeout_seconds == 75

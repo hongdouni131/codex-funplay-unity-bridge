@@ -1,5 +1,9 @@
 # Copy this file to <UnityProject>/tools/bridge-project.toml.
 project_name = "ExampleUnityProject"
+# Optional display name for this project's Codex MCP connection.
+bridge_name = "Example UI Sandbox"
+unity_project_root = "D:\\UnityProjects\\ExampleUnityProject"
 funplay_url = "http://127.0.0.1:22166/"
 timeout_seconds = 10
+execute_code_timeout_seconds = 60
 

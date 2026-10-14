@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "codex-funplay-bridge"
-version = "0.1.0"
+version = "0.2.0"
 description = "A project-scoped stdio MCP bridge for Funplay MCP for Unity."
 readme = "README.md"
 requires-python = ">=3.11"
