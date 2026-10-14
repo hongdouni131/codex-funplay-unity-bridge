@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from . import __version__
 from .config import BridgeConfig
 
 SUPPORTED_PROTOCOL_VERSIONS = frozenset({"2024-11-05", "2025-03-26"})
@@ -49,7 +50,7 @@ class FunplayBroker:
             {
                 "protocolVersion": REQUESTED_PROTOCOL_VERSION,
                 "capabilities": {},
-                "clientInfo": {"name": "codex-funplay-bridge", "version": "0.1.0"},
+                "clientInfo": {"name": "codex-funplay-bridge", "version": __version__},
             },
         )
         protocol_version = result.get("protocolVersion") if isinstance(result, dict) else None
@@ -71,20 +72,20 @@ class FunplayBroker:
             raise BridgeError("invalid_response", "tools/list response contains an invalid tool definition")
         return tools
 
-    def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    def call_tool(self, name: str, arguments: dict[str, Any], *, timeout_seconds: float | None = None) -> dict[str, Any]:
         if not isinstance(name, str) or not name.strip():
             raise BridgeError("invalid_arguments", "tool name must be a non-empty string")
         if not isinstance(arguments, dict):
             raise BridgeError("invalid_arguments", "tool arguments must be an object")
-        result = self._request("tools/call", {"name": name.strip(), "arguments": arguments})
+        result = self._request("tools/call", {"name": name.strip(), "arguments": arguments}, timeout_seconds=timeout_seconds)
         if not isinstance(result, dict):
             raise BridgeError("invalid_response", "tools/call response must be an object")
         return result
 
-    def _request(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
+    def _request(self, method: str, params: dict[str, Any], *, timeout_seconds: float | None = None) -> dict[str, Any]:
         request_id = next(self._ids)
         payload = {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
-        response = self._post(payload)
+        response = self._post(payload, timeout_seconds=timeout_seconds)
         try:
             body = response.json()
         except ValueError as exc:
@@ -103,17 +104,23 @@ class FunplayBroker:
     def _notify(self, method: str, params: dict[str, Any]) -> None:
         self._post({"jsonrpc": "2.0", "method": method, "params": params})
 
-    def _post(self, payload: dict[str, Any]) -> httpx.Response:
+    def _post(self, payload: dict[str, Any], *, timeout_seconds: float | None = None) -> httpx.Response:
         try:
             response = self._client.post(
                 self.config.funplay_url,
                 json=payload,
                 headers={"Accept": "application/json, text/event-stream"},
+                timeout=self.config.timeout_seconds if timeout_seconds is None else timeout_seconds,
             )
             response.raise_for_status()
             return response
         except httpx.TimeoutException as exc:
-            raise BridgeError("timeout", "Timed out while contacting Funplay", {"url": self.config.funplay_url}) from exc
+            effective_timeout = self.config.timeout_seconds if timeout_seconds is None else timeout_seconds
+            raise BridgeError(
+                "timeout",
+                "Timed out while contacting Funplay",
+                {"url": self.config.funplay_url, "timeout_seconds": effective_timeout},
+            ) from exc
         except httpx.ConnectError as exc:
             raise BridgeError(
                 "connection_refused",

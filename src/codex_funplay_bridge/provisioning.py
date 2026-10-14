@@ -44,6 +44,8 @@ class DeploymentPlan:
     config_path: Path
     virtualenv_path: Path
     package_path: Path
+    bridge_name: str | None = None
+    execute_code_timeout_seconds: float = 60
 
     @property
     def managed_paths(self) -> tuple[Path, ...]:
@@ -60,6 +62,9 @@ def create_plan(
     funplay_url: str,
     timeout_seconds: float = 10,
     package_path: Path | None = None,
+    *,
+    bridge_name: str | None = None,
+    execute_code_timeout_seconds: float = 60,
 ) -> DeploymentPlan:
     root = Path(project_root).expanduser().resolve()
     if not root.is_dir():
@@ -73,7 +78,9 @@ def create_plan(
     source = root / "tools" / "bridge-project.toml"
     try:
         # Reuse the runtime configuration rules before the deployment writes files.
-        candidate = _validate_values(root.name, funplay_url, timeout_seconds, source)
+        candidate = BridgeConfig.from_values(
+            root.name, funplay_url, timeout_seconds, source, root, bridge_name, execute_code_timeout_seconds
+        )
     except ConfigError as exc:
         raise ProvisioningError(str(exc)) from exc
 
@@ -104,6 +111,8 @@ def create_plan(
         config_path=source,
         virtualenv_path=root / ".unity-mcp-bridge-venv",
         package_path=package_source,
+        bridge_name=candidate.bridge_name,
+        execute_code_timeout_seconds=candidate.execute_code_timeout_seconds,
     )
 
 
@@ -151,16 +160,26 @@ def deploy(plan: DeploymentPlan, *, replace_existing: bool = False) -> list[Path
     return copied
 
 
-def _validate_values(project_name: str, funplay_url: str, timeout_seconds: float, source: Path) -> BridgeConfig:
-    return BridgeConfig.from_values(project_name, funplay_url, timeout_seconds, source)
+def _validate_values(
+    project_name: str,
+    funplay_url: str,
+    timeout_seconds: float,
+    source: Path,
+    unity_project_root: Path | None = None,
+) -> BridgeConfig:
+    return BridgeConfig.from_values(project_name, funplay_url, timeout_seconds, source, unity_project_root)
 
 
 def _write_config(plan: DeploymentPlan) -> None:
     contents = (
         f"project_name = {json.dumps(plan.project_name)}\n"
+        f"unity_project_root = {json.dumps(str(plan.project_root))}\n"
         f"funplay_url = {json.dumps(plan.funplay_url)}\n"
         f'timeout_seconds = {plan.timeout_seconds:g}\n'
+        f'execute_code_timeout_seconds = {plan.execute_code_timeout_seconds:g}\n'
     )
+    if plan.bridge_name is not None:
+        contents += f"bridge_name = {json.dumps(plan.bridge_name, ensure_ascii=False)}\n"
     temporary_path = plan.config_path.with_suffix(".toml.tmp")
     temporary_path.write_text(contents, encoding="utf-8")
     temporary_path.replace(plan.config_path)

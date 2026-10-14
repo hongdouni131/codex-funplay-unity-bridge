@@ -7,6 +7,8 @@ import json
 import sys
 from pathlib import Path
 
+from .bridge_naming import bridge_server_name
+
 
 class ConfigSnippetError(ValueError):
     """Raised when a Codex configuration snippet cannot be generated."""
@@ -39,13 +41,14 @@ def _validate_name(project_name: str) -> str:
     return name
 
 
-def build_config_snippet(project_name: str, project_root: str | Path) -> str:
+def build_config_snippet(project_name: str, project_root: str | Path, *, bridge_name: str | None = None) -> str:
     """Return a TOML MCP server entry for a confirmed Bridge deployment."""
     name = _validate_name(project_name)
     root = _validate_project_root(project_root)
-    server_name = "unity_bridge_" + "_".join(
-        part for part in "".join(character.lower() if character.isalnum() else "_" for character in name).split("_") if part
-    )
+    try:
+        server_name = bridge_server_name(bridge_name if bridge_name is not None else name)
+    except ValueError as exc:
+        raise ConfigSnippetError(str(exc)) from exc
     launcher = root / "tools" / "start_unity_http_stdio_bridge.cmd"
     return (
         f"[mcp_servers.{server_name}]\n"
@@ -60,6 +63,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--project-name", help="The project name to use in the MCP entry.")
     parser.add_argument("--project-root", help="Absolute path to the Unity project root.")
+    parser.add_argument("--bridge-name", help="Optional custom Bridge name for the MCP entry.")
     return parser
 
 
@@ -68,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     project_name = args.project_name or input("Unity 项目名称: ").strip()
     project_root = args.project_root or input("Unity 项目根目录: ").strip()
     try:
-        snippet = build_config_snippet(project_name, project_root)
+        snippet = build_config_snippet(project_name, project_root, bridge_name=args.bridge_name)
     except ConfigSnippetError as exc:
         print(f"配置片段生成失败：{exc}", file=sys.stderr)
         return 2
