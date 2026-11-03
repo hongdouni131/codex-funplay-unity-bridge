@@ -12,6 +12,7 @@ pyinstaller-build/
 # Release binaries are published as GitHub Release assets, not source files.
 release/Codex-Funplay-Bridge-Setup.exe
 release/Codex-Funplay-Bridge-Setup.exe.sha256
+release/v*/
 
 # Personal planning notes stay local and are not part of the public template.
 Reference file/

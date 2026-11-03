@@ -1,6 +1,6 @@
 # Codex-Funplay Unity Bridge 模板
 
-本项目提供按 Unity 项目隔离的 Python MCP 服务，使 Codex Desktop 能通过 Funplay MCP for Unity 的 HTTP 服务调用 Unity 工具。它不会替换或修改 Funplay。
+本项目提供按 Unity 项目隔离的 Python MCP 服务，使 Codex Desktop 能通过 Funplay MCP for Unity 的 HTTP 服务调用 Unity 工具。它不会替换或修改 Funplay。当前版本为 **0.3.0**，新增完整UI Agent v2工具链；安装与升级见 [0.3.0说明](docs/release-v0.3.0.md)。
 
 ```text
 Codex Desktop -> stdio MCP -> Python Bridge -> HTTP JSON-RPC -> Funplay -> Unity Editor
@@ -13,15 +13,16 @@ Codex Desktop -> stdio MCP -> Python Bridge -> HTTP JSON-RPC -> Funplay -> Unity
 - 向 Codex 提供 `unity_bridge_info`、`unity_health_check`、`unity_list_tools`、`unity_call_tool`。
 - 部署后生成可复制的 Codex TOML 配置片段，不自动修改全局配置。
 - 在项目配置旁记录已脱敏的 JSONL 审计日志。
-- 可选 UI Agent 集成：提供 Spec 校验、计划准备、确认后生成、层级读取及活动场景合并审计五个具名工具。通用桥不要求安装 UI Agent Package。
+- 可选 [UI Agent Package](https://github.com/hongdouni131/ui-agent-tools) 集成：提供v1/v2的Spec校验、计划准备、确认后生成、层级读取及审计等18个具名工具。通用桥不要求安装UI Agent Package。
 - 自定义 Bridge 名称，区分多个项目连接；UI Agent 操作按配置的 Unity 根路径核验项目身份。
 - `execute_code` 独立超时默认 60 秒；执行结果未知时不自动重试。
+- 0.3.0安装器包含完整22个自有工具（4通用+5 v1+13 v2），支持素材导入检查/精确查询、候选页、布局测量、选择合并、v2校验/计划/生成/审计、结果诊断与受限Spec修订。候选页提供中文用途提示、推荐与风险理由、并排预览、Spec映射和写入范围；提交后仍需Validate、Prepare、完整计划和开发者授权。槽位骨架见[候选页模板](templates/ui-agent-sprite-selection.example.json)，完整说明见[工具文档](docs/ui-agent-composition-tools.md)。旧公开0.2.0安装器只有4通用+5 v1工具，不含v2扩展。
 
 ## 环境要求
 
 - Windows
 - 可通过 Windows `py` 启动器使用 Python 3.11
-- Unity 2022.3 或更新版本
+- Unity 2022.3（UI Agent配对实测2022.3.62f3c1；其他版本未作本次承诺）
 - [Funplay MCP for Unity](https://github.com/FunplayAI/funplay-unity-mcp)
 - Codex Desktop
 
@@ -94,13 +95,17 @@ command = "D:\\path\\to\\ExampleUnityProject\\tools\\start_unity_http_stdio_brid
 3. `unity_list_tools`
 4. 一个已知的只读 Funplay 工具
 
-`0.2.0` 有 74 个自动化测试，覆盖配置与旧配置兼容、HTTP/JSON-RPC 故障、部署保护、审计日志脱敏、项目守卫、计划消费与超时不重放、审计异步轮询和分页。阶段四已在 Unity Sandbox 实测五个具名工具。
+0.3.0的验证包括完整pytest回归、EXE内嵌wheel检查、临时项目部署、pip check及安装后精确22工具发现；实际本轮结果以[发布验证](docs/release-validation.md)为准。`unity_list_tools`列出Funplay工具，MCP客户端的`tools/list`才列出Bridge自有工具，两者数量不同。
+
+历史源码检查点：2026-10-21为105/105；布局/合并/诊断/修订完成后为160/160。它们不自动等于新EXE验收。运行中的MCP进程必须重新加载才使用部署后的代码。
+
+候选页七项体验扩展当时为117/117、定向11/11，是历史结果。HTML预览是选择辅助，最终尺寸/引用以Unity测量和读回为准。
 
 ## 使用 UI Agent（可选）
 
 在 Unity 2022.3 项目中，先通过 Package Manager 的 **Add package from disk...** 选择 UI Agent Tools 源码目录中的 `package.json`，等待编译结束。该 Package 单独获取，Bridge 安装程序不会携带或安装它。当前实测 Package 为 `com.hongdouni.ui-agent-tools` `0.1.0`。
 
-连接 Bridge 后，Codex 的 MCP 工具列表会显示以下工具；`unity_list_tools` 列出的是 Funplay 原生工具，不能用于判断这些 Bridge 专用工具是否注册。
+连接 Bridge 后，Codex 的 MCP 工具列表会显示以下五个v1工具，另有下方13个v2工具；`unity_list_tools`列出的是Funplay原生工具，不能用于判断这些Bridge专用工具是否注册。
 
 | 工具 | 用途 |
 | --- | --- |
@@ -112,11 +117,13 @@ command = "D:\\path\\to\\ExampleUnityProject\\tools\\start_unity_http_stdio_brid
 
 使用者可以对 Codex 说：“用 UI Agent 准备一个深色主菜单，先展示计划给我确认。”Codex 整理 Spec 和 TMP 字体路径，先校验与准备，再展示计划；取得用户明确确认后传入同一 Spec、字体和指纹生成，最后读回及审计。计划指纹能发现计划变化，不能证明批准来自真人。按钮暂不绑定游戏逻辑；文本必须由所选字体支持。
 
-未安装 Package 时，五个工具仍会被列出，但调用返回 Package 不可用；四个通用工具仍可使用。详细参数、错误处理和升级步骤见 [安装说明](docs/setup.md)、[故障排除](docs/troubleshooting.md) 和 [工具契约](docs/ui-agent-tools-design.md)。
+v2工具：`ui_agent_find_sprites`、`ui_agent_audit_sprite_imports`、`ui_agent_create_sprite_selection`、`ui_agent_get_sprite_selection`、`ui_agent_cancel_sprite_selection`、`ui_agent_measure_composition_layout`、`ui_agent_merge_sprite_selection`、`ui_agent_validate_composition`、`ui_agent_prepare_composition`、`ui_agent_generate_composition`、`ui_agent_audit_composition`、`ui_agent_diagnose_composition`、`ui_agent_revise_composition`。
+
+未安装Package时，注册仍存在，依赖Unity Package API的调用会返回不可用；四个通用工具仍可使用。详细参数、错误处理和升级步骤见[安装说明](docs/setup.md)、[故障排除](docs/troubleshooting.md)和[工具契约](docs/ui-agent-tools-design.md)。
 
 ## 构建与版本
 
-当前源码版本为 `0.2.0`，尚待用户检查后发布。版本变化见 [变更日志](CHANGELOG.md)，候选版本说明见 [v0.2.0](docs/release-v0.2.0.md)。运行 `build_setup_exe.cmd` 会构建对应版本 wheel、EXE 和 SHA256；安装包自检方法见 [发布验证](docs/release-validation.md)。
+当前源码版本为 `0.3.0`，本轮准备安装器，不自动发布。版本变化见[变更日志](CHANGELOG.md)，候选说明见[v0.3.0](docs/release-v0.3.0.md)。运行`build_setup_exe.cmd`构建对应版本wheel、EXE和SHA256；安装包自检方法见[发布验证](docs/release-validation.md)。旧0.2.0历史附件不以新代码重新发布或覆盖。
 
 ## 限制
 

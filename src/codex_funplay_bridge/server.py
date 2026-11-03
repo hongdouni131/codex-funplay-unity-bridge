@@ -43,6 +43,10 @@ def unity_bridge_info() -> dict[str, Any]:
             "unity_project_root": str(config.unity_project_root) if config.unity_project_root else None,
             "funplay_url": config.funplay_url,
             "config_source": str(config.source),
+            "bridge_capabilities": {"ui_agent_main_menu_tools": True, "ui_agent_composition_tools": True,
+                                    "ui_agent_sprite_catalog": True, "ui_agent_sprite_selection": True,
+                                    "ui_agent_layout_measurement": True, "ui_agent_sprite_selection_merge": True,
+                                    "ui_agent_composition_diagnosis": True, "ui_agent_spec_revision": True},
         }
     except Exception as exc:
         return _error(exc)
