@@ -1,0 +1,35 @@
+[
+  {
+    "id": "main.panel",
+    "label": "主面板背景",
+    "description": "选择承载标题和按钮的面板背景",
+    "usageHint": "优先选择可 Sliced 拉伸且 Border 有效的素材",
+    "beginnerTip": "比较 Sliced 目标预览，不要只看原始图片",
+    "specNodeId": "MainPanel",
+    "writeScope": "仅更新 MainPanel.style，不修改素材、场景或已有 Prefab",
+    "targetSize": [1100, 700],
+    "candidates": []
+  },
+  {
+    "id": "main.button",
+    "label": "主按钮背景",
+    "description": "选择可横向拉伸的按钮背景",
+    "usageHint": "优先查看按钮文字区域和横向 Sliced 结果",
+    "beginnerTip": "先选一个候选，再在目标尺寸预览中确认文字不会贴边",
+    "specNodeId": "StartButton",
+    "writeScope": "仅更新 StartButton.style，不修改素材、场景或已有 Prefab",
+    "targetSize": [480, 96],
+    "candidates": []
+  },
+  {
+    "id": "main.banner",
+    "label": "标题横幅",
+    "description": "选择标题或章节装饰",
+    "usageHint": "装饰图案通常保持比例；只有背景纹理适合 Sliced",
+    "beginnerTip": "先比较 Simple 预览，确认主体没有被裁切",
+    "specNodeId": "TitleDecoration",
+    "writeScope": "仅更新 TitleDecoration.style，不修改素材、场景或已有 Prefab",
+    "targetSize": [720, 160],
+    "candidates": []
+  }
+]

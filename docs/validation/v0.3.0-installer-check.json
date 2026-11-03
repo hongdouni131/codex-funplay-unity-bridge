@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "version": "0.3.0",
+  "frozen": true,
+  "gui_components": "passed",
+  "bundled_wheel": "codex_funplay_bridge-0.3.0-py3-none-any.whl",
+  "deployment": {
+    "managed_files": [
+      "requirements-unity-http-bridge.txt",
+      "start_unity_http_stdio_bridge.cmd",
+      "initialize_unity_http_stdio_bridge.cmd",
+      "bridge-project.toml"
+    ],
+    "custom_name_and_timeout": "passed"
+  },
+  "replacement_of_existing_managed_files": "passed",
+  "pip_check": "No broken requirements found.",
+  "installed_stdio_mcp": {
+    "version": "0.3.0",
+    "tools": [
+      "ui_agent_audit_composition",
+      "ui_agent_audit_sprite_imports",
+      "ui_agent_audit_ui",
+      "ui_agent_cancel_sprite_selection",
+      "ui_agent_create_sprite_selection",
+      "ui_agent_diagnose_composition",
+      "ui_agent_find_sprites",
+      "ui_agent_generate_composition",
+      "ui_agent_generate_main_menu",
+      "ui_agent_get_sprite_selection",
+      "ui_agent_inspect_hierarchy",
+      "ui_agent_measure_composition_layout",
+      "ui_agent_merge_sprite_selection",
+      "ui_agent_prepare_composition",
+      "ui_agent_prepare_main_menu",
+      "ui_agent_revise_composition",
+      "ui_agent_validate_composition",
+      "ui_agent_validate_spec",
+      "unity_bridge_info",
+      "unity_call_tool",
+      "unity_health_check",
+      "unity_list_tools"
+    ],
+    "capabilities": {
+      "ui_agent_main_menu_tools": true,
+      "ui_agent_composition_tools": true,
+      "ui_agent_sprite_catalog": true,
+      "ui_agent_sprite_selection": true,
+      "ui_agent_layout_measurement": true,
+      "ui_agent_sprite_selection_merge": true,
+      "ui_agent_composition_diagnosis": true,
+      "ui_agent_spec_revision": true
+    }
+  },
+  "temporary_directory_removed": true
+}

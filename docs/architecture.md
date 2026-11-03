@@ -16,9 +16,9 @@ UI Agent 专用调用使用项目配置中的 `unity_project_root`。固定的 `
 
 ## 可选 UI Agent 通道
 
-MCP 服务器同时注册四个通用 Bridge 工具与五个 UI Agent 具名工具。通用工具继续转发 Funplay；具名工具把操作映射到已安装的 Unity Editor Package API。UI 规则、布局和资源生成仍由 Package 实现，Python 不复制这些规则。Package 未安装时专用调用失败，不影响通用工具。
+MCP服务器0.3.0同时注册四个通用Bridge工具、五个v1 UI Agent工具、十三个v2工具，共二十二个；旧公开0.2.0安装器为原九工具。通用工具继续转发Funplay；具名工具调用已安装的Unity Editor Package API。候选页由Bridge在本机loopback短期提供；布局和诊断取Unity新鲜证据，选择合并和Spec修订仅处理受限字段，不生成任意C#或直接写Unity资源。生成仍经过完整Prepare/开发者授权。Package未安装时专用API调用失败，不影响通用工具。v2契约见[v2工具说明](ui-agent-composition-tools.md)。
 
-`UiAgentTools` 在进程内缓存最多 32 份准备计划，30 分钟过期。生成时检查确认字段、原始 Spec、字体路径、项目根路径与指纹，并在执行前消费计划；Package 再准备、核对指纹和输出路径。指纹是计划一致性检查，真人确认由调用方对话流程负责。
+`UiAgentTools` 在进程内分别缓存 v1/v2 各最多32份准备计划，30分钟过期。v1绑定原始 Spec、字体路径和项目；v2字体属于 Spec，因此绑定精确 Spec 字符串和项目根路径。生成检查确认字段和指纹，并在执行前消费计划；Package 再准备、核对指纹和输出路径。指纹是计划一致性检查，真人确认由调用方对话流程负责。v2只保存新 Prefab/自有材质，不创建活动场景实例。
 
 活动场景审计先收集 Package 报告和根对象 ID，再启动 Funplay 只读审计，查询任务并收齐 finding 分页；合并前复核活动场景路径。`incomplete` 和分页限制会保留，不把空结果当作完整通过。第一版不提供 Prefab 合并审计。
 

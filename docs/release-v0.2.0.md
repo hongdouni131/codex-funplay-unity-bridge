@@ -1,6 +1,6 @@
-# Codex-Funplay Unity Bridge v0.2.0（发布候选）
+# Codex-Funplay Unity Bridge v0.2.0
 
-这个版本让 Codex 直接发现并调用 UI Agent 的校验、计划、生成、层级读取与审计工具，同时继续支持原有 Funplay 通用桥。当前产物供本地检查，尚未创建 GitHub Release。
+这个版本让 Codex 直接发现并调用 UI Agent 的校验、计划、生成、层级读取与审计工具，同时继续支持原有 Funplay 通用桥。当前产物供本地检查，。
 
 ## 新增能力
 

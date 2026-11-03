@@ -31,8 +31,21 @@ async def main():
             payload = json.loads(info.content[0].text)
             assert payload["ok"] and payload["bridge_version"] == sys.argv[1], payload
             names = sorted(t.name for t in registered.tools)
-            assert len(names) == 9 and sum(n.startswith("ui_agent_") for n in names) == 5, names
-            print(json.dumps({"version": payload["bridge_version"], "tools": names}))
+            expected = {
+                "unity_bridge_info", "unity_health_check", "unity_list_tools", "unity_call_tool",
+                "ui_agent_validate_spec", "ui_agent_prepare_main_menu", "ui_agent_generate_main_menu",
+                "ui_agent_inspect_hierarchy", "ui_agent_audit_ui", "ui_agent_find_sprites",
+                "ui_agent_audit_sprite_imports", "ui_agent_create_sprite_selection",
+                "ui_agent_get_sprite_selection", "ui_agent_cancel_sprite_selection",
+                "ui_agent_validate_composition", "ui_agent_prepare_composition",
+                "ui_agent_generate_composition", "ui_agent_audit_composition",
+                "ui_agent_measure_composition_layout", "ui_agent_merge_sprite_selection",
+                "ui_agent_diagnose_composition", "ui_agent_revise_composition",
+            }
+            assert set(names) == expected, {"missing": sorted(expected - set(names)), "extra": sorted(set(names) - expected)}
+            capabilities = payload["bridge_capabilities"]
+            assert len(capabilities) == 8 and all(value is True for value in capabilities.values()), capabilities
+            print(json.dumps({"version": payload["bridge_version"], "tools": names, "capabilities": capabilities}))
 asyncio.run(main())
 '''
 
@@ -60,6 +73,11 @@ def check_installer(report_path: Path) -> int:
                 with zipfile.ZipFile(plan.package_path) as wheel:
                     runtime = wheel.read("codex_funplay_bridge/__init__.py").decode("utf-8")
                     assert f'__version__ = "{__version__}"' in runtime
+                    assert {
+                        "codex_funplay_bridge/sprite_selection.py",
+                        "codex_funplay_bridge/spec_selection_merge.py",
+                        "codex_funplay_bridge/spec_revision.py",
+                    }.issubset(wheel.namelist())
                 report["bundled_wheel"] = plan.package_path.name
             plan.tools_directory.mkdir(parents=True)
             for path in plan.managed_paths:

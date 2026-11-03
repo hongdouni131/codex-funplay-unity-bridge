@@ -69,3 +69,15 @@ def test_execute_code_timeout_returns_unknown_status_and_never_retries(
     assert result["ok"] is False
     assert result["error"]["kind"] == "execution_status_unknown"
     assert TimeoutBroker.instances[-1].calls == 1
+
+
+def test_unity_bridge_info_reports_sprite_selection_capability(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = BridgeConfig("Demo", "http://127.0.0.1:22166/", 10, tmp_path / "bridge.toml")
+    monkeypatch.setattr(server, "_load", lambda: config)
+
+    result = server.unity_bridge_info()
+
+    assert result["ok"] is True
+    assert result["bridge_capabilities"]["ui_agent_sprite_selection"] is True

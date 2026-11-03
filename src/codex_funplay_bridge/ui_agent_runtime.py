@@ -12,6 +12,9 @@ from .broker import BridgeError, FunplayBroker
 from .config import BridgeConfig
 
 MAX_EXECUTE_CODE_LENGTH = 65_536
+# Fixed v2 templates carry up to 65,536 UTF-16 units as UTF-8/base64 data.
+# Generic callers retain the smaller code limit.
+MAX_TRUSTED_DATA_CODE_LENGTH = 280_000
 
 
 def build_guarded_command(expected_project_root: Path, operation_statement: str) -> str:
@@ -132,6 +135,7 @@ def call_guarded_command(
     operation_statement: str,
     *,
     timeout_seconds: float | None = None,
+    max_code_length: int = MAX_EXECUTE_CODE_LENGTH,
 ) -> dict[str, Any]:
     if config.unity_project_root is None:
         raise BridgeError(
@@ -139,7 +143,7 @@ def call_guarded_command(
             "This Bridge configuration has no unity_project_root; redeploy or update its project-local configuration.",
         )
     code = build_guarded_command(config.unity_project_root, operation_statement)
-    result = call_execute_code(broker, code, timeout_seconds=timeout_seconds)
+    result = call_execute_code(broker, code, timeout_seconds=timeout_seconds, max_code_length=max_code_length)
     verify_context_result(config, result)
     if "guard" not in result or "result" not in result:
         raise BridgeError("invalid_response", "Unity command response is missing the runtime guard envelope")
@@ -151,10 +155,13 @@ def call_execute_code(
     code: str,
     *,
     timeout_seconds: float | None = None,
+    max_code_length: int = MAX_EXECUTE_CODE_LENGTH,
 ) -> dict[str, Any]:
     if not isinstance(code, str) or not code.strip():
         raise BridgeError("invalid_arguments", "execute_code code must be a non-empty string")
-    if len(code) > MAX_EXECUTE_CODE_LENGTH:
+    if not MAX_EXECUTE_CODE_LENGTH <= max_code_length <= MAX_TRUSTED_DATA_CODE_LENGTH:
+        raise BridgeError("invalid_arguments", "Invalid trusted template size limit")
+    if len(code) > max_code_length:
         raise BridgeError("invalid_arguments", "execute_code code exceeds the Bridge size limit")
     effective_timeout = timeout_seconds if timeout_seconds is not None else broker.config.execute_code_timeout_seconds
     if effective_timeout <= 0:

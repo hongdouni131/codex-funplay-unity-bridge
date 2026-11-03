@@ -202,3 +202,21 @@ def test_execute_code_refuses_when_funplay_cannot_enable_safety_checks() -> None
         assert [request["method"] for request in server.requests] == ["tools/list"]
     finally:
         server.stop()
+
+
+def test_trusted_data_templates_allow_full_v2_unicode_without_relaxing_generic_limit(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from codex_funplay_bridge.ui_agent_tools import _csharp_data
+    from codex_funplay_bridge.ui_agent_runtime import MAX_TRUSTED_DATA_CODE_LENGTH
+    config = BridgeConfig("Demo", "http://127.0.0.1:21898/", 10, tmp_path / "bridge.toml", tmp_path)
+    code = build_guarded_command(tmp_path, "ctx.ReturnValue = " + _csharp_data('"' + "汉" * 65534 + '"') + ";")
+    assert 65_536 < len(code) < MAX_TRUSTED_DATA_CODE_LENGTH
+    class Broker:
+        def __init__(self) -> None: self.config = config
+        def list_tools(self) -> list[dict[str, Any]]:
+            return [{"name": "execute_code", "inputSchema": {"properties": {"safety_checks": {"type": "boolean"}}}}]
+        def call_tool(self, _name: str, args: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+            assert args["safety_checks"] is True
+            return {"structuredContent": {"success": True, "data": {"returnValue": {"guard": {"status": "ready", "projectRoot": str(tmp_path)}, "result": {"valid": True}}}}}
+    broker = Broker()
+    with pytest.raises(BridgeError, match="size limit"): call_execute_code(broker, code)
+    assert call_execute_code(broker, code, max_code_length=MAX_TRUSTED_DATA_CODE_LENGTH)["result"]["valid"] is True
